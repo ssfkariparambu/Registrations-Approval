@@ -1,8 +1,9 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-	<meta name="viewport" content="width=device-width, initial-scale=1.0" />  
 <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
 <title>QR Verification</title>
 
 <script src="https://unpkg.com/html5-qrcode"></script>
@@ -13,32 +14,42 @@
     text-align: center;
     padding: 10px;
   }
+
   #reader {
     width: 300px;
     margin: auto;
   }
+
   #result {
     margin-top: 15px;
     font-size: 22px;
     font-weight: bold;
+  }
+
+  /* 🔒 hide camera controls */
+  button, select {
+    display: none !important;
   }
 </style>
 </head>
 
 <body>
 
-<h2>Scan or Upload QR Code</h2>
+<h2>Scan QR Code</h2>
 
-<!-- Camera Scanner -->
 <div id="reader"></div>
 
-<!-- Gallery Upload -->
 <input type="file" id="qr-input" accept="image/*">
 
 <div id="result"></div>
 
+<!-- 🔊 Beep Sound -->
+<audio id="beep">
+  <source src="https://actions.google.com/sounds/v1/cartoon/wood_plank_flicks.ogg">
+</audio>
+
 <script>
-  // 🔒 Hidden valid QR values (image content)
+  // 🔒 Hidden valid QR values
   const validCodes = [
     "REG NO : REG-2455 | NAME : SWALIH K | PHONE : +91 9645169241",
     "REG2025B",
@@ -46,40 +57,49 @@
   ];
 
   const resultBox = document.getElementById("result");
+  const beep = document.getElementById("beep");
 
-  // -------- VERIFY FUNCTION --------
   function verifyCode(text) {
     if (validCodes.includes(text)) {
       resultBox.innerHTML = "✅ Registration Successful";
       resultBox.style.color = "green";
+      beep.play(); // 🔊 sound on success
     } else {
       resultBox.innerHTML = "❌ Invalid Code";
       resultBox.style.color = "red";
     }
   }
 
-  // -------- CAMERA SCAN --------
-  function onScanSuccess(decodedText) {
-    verifyCode(decodedText);
-  }
-
-  const scanner = new Html5QrcodeScanner(
-    "reader",
-    { fps: 10, qrbox: 250 }
-  );
-  scanner.render(onScanSuccess);
-
-  // -------- IMAGE UPLOAD SCAN --------
+  // ✅ Back camera only
   const html5QrCode = new Html5Qrcode("reader");
 
+  Html5Qrcode.getCameras().then(cameras => {
+    const backCamera = cameras.find(cam =>
+      cam.label.toLowerCase().includes("back") ||
+      cam.label.toLowerCase().includes("environment")
+    );
+
+    const cameraId = backCamera ? backCamera.id : cameras[0].id;
+
+    html5QrCode.start(
+      cameraId,
+      {
+        fps: 10,
+        qrbox: 250
+      },
+      decodedText => {
+        verifyCode(decodedText);
+      }
+    );
+  });
+
+  // 📁 Image upload scan
   document.getElementById("qr-input").addEventListener("change", function(e) {
     const file = e.target.files[0];
     if (!file) return;
 
     html5QrCode.scanFile(file, true)
-      .then(decodedText => {
-        verifyCode(decodedText);
-      })
+      .then(decodedText => verifyCode(decodedText))
       .catch(() => {
         resultBox.innerHTML = "❌ QR Code not detected";
         resultBox.style.color = "red";
