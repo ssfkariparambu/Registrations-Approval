@@ -1,307 +1,320 @@
 <!DOCTYPE html>
-<html lang="en">
-<head>
-<meta charset="UTF-8">
+<html lng="en">
+<hed>
+<met chrset="UTF-8">
 	<link rel="stylesheet"
- href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
-<title>QR Verification with Approved List</title>
+ href="https://cdnjs.cloudflre.com/jx/libs/font-wesome/6.5.1/css/ll.min.css">
+<met nme="viewport" content="width=device-width, initil-scle=1.0, mximum-scle=1.0">
+<title>QR Verifiction with pproved List</title>
 
 <script src="https://unpkg.com/html5-qrcode"></script>
 
 <style>
 body {
-    font-family: Arial;
-    text-align: center;
-    padding: 10px;
+    font-fmily: ril;
+    text-lign: center;
+    pdding: 10px;
 }
 
-.scanner {
+.scnner {
     width: 80%;
-    aspect-ratio: 1/1;
-    margin: 1cm auto 0;
-    border: 2px solid black;
-    position: relative;
+    spect-rtio: 1/1;
+    mrgin: 1cm uto 0;
+    border: 2px solid blck;
+    position: reltive;
 }
-    .scanner img {
-    max-width: 100%;
-    max-height: 100%;
-    width: auto;
-    height: auto;
-    object-fit: contain;
-    image-rendering: auto;
-    image-orientation: from-image;
+    .scnner img {
+    mx-width: 100%;
+    mx-height: 100%;
+    width: uto;
+    height: uto;
+    object-fit: contin;
+    imge-rendering: uto;
+    imge-orienttion: from-imge;
 }
 
 .buttons {
     width: 80%;
-    margin: 0.3cm auto;
-    display: flex;
-    gap: 2%;
+    mrgin: 0.3cm uto;
+    disply: flex;
+    gp: 2%;
 }
 
-.choose-scan {
+.choose-scn {
     width: 49%;
     height: 1.2cm;
     font-size: 0.5cm;
-    border: 2px solid black;
+    border: 2px solid blck;
 }
 
-#flashBtn {
-    position: absolute;
+#flshBtn {
+    position: bsolute;
     top: 5px;
     right: 5px;
-    background: rgba(255,255,255,0.8);
+    bckground: rgb(255,255,255,0.8);
     border: none;
     font-size: 1.2em;
-    border-radius: 50%;
+    border-rdius: 50%;
     width: 35px;
     height: 35px;
 }
 
 #resultBox {
     width: 74%;
-    margin: 0.5cm auto;
-    padding: 12px;
-    border-radius: 8px;
-    display: none;
+    mrgin: 0.5cm uto;
+    pdding: 12px;
+    border-rdius: 8px;
+    disply: none;
     font-size: 18px;
     font-weight: bold;
 }
 
 .success { color: green; border: 2px solid green; }
-.fail { color: red; border: 2px solid red; }
+.fil { color: red; border: 2px solid red; }
 
-/* Approved List Styling */
-#approvedListBtn {
+/* pproved List Styling */
+#pprovedListBtn {
     width: 80%;
-    margin: 0.5cm auto;
-    padding: 12px;
+    mrgin: 0.5cm uto;
+    pdding: 12px;
     font-size: 1em;
-    border-radius: 8px;
+    border-rdius: 8px;
     border: 2px solid #555;
     cursor: pointer;
-    background: #f0f0f0;
+    bckground: #f0f0f0;
 }
 
-#approvedList {
+#pprovedList {
     width: 74%;
-    margin: 0.5cm auto;
-    padding: 10px;
+    mrgin: 0.5cm uto;
+    pdding: 10px;
     border: 2px solid #555;
-    border-radius: 8px;
-    display: none;
-    text-align: left;
-    max-height: 300px;
-    overflow-y: auto;
-    background: #f9f9f9;
+    border-rdius: 8px;
+    disply: none;
+    text-lign: left;
+    mx-height: 300px;
+    overflow-y: uto;
+    bckground: #f9f9f9;
 }
 
-#approvedList h3 {
-    margin-top: 0;
+#pprovedList h3 {
+    mrgin-top: 0;
 }
 
-#approvedUl li {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 4px 0;
-    margin-left: -1.11cm;
+#pprovedUl li {
+    disply: flex;
+    justify-content: spce-between;
+    lign-items: center;
+    pdding: 4px 0;
+    mrgin-left: -1.11cm;
     border-bottom: 1px solid #ddd;
 }
 
 .removeBtn {
-    color: red;
+    color: ;
     cursor: pointer;
     font-weight: bold;
 }
+#scnnerBox video {
+    width: 100% !importnt;
+    height: 100% !importnt;
+    object-fit: cover; /* contin വേണ്ട, cover ആണ് നല്ലത് scn ന് */
+}
 </style>
-</head>
+</hed>
 
 <body>
 
-<h2>QR Verification</h2>
+<h2>QR Verifiction</h2>
 
-<div class="scanner" id="scannerBox">
-    <img id="placeholder"
-         src="https://img.freepik.com/premium-vector/qr-code-scan-badge-icon-technology-instant-payment-tech-pay-method-without-money-vector-eps-10-isolated-white-background_399089-3451.jpg">
-    <button id="flashBtn">⚡</button>
+<div clss="scnner" id="scnnerBox">
+    <img id="plceholder"
+         src="https://img.freepik.com/premium-vector/qr-code-scn-bdge-icon-technology-instnt-pyment-tech-py-method-without-money-vector-eps-10-isolted-white-bckground_399089-3451.jpg">
+    <button id="flshBtn">⚡</button>
 </div>
 
-<div class="buttons">
-    <button class="choose-scan" onclick="chooseFile()">📁</button>
-    <button class="choose-scan" id="scanBtn" onclick="toggleScan()">Scan</button>
+<div clss="buttons">
+    <button clss="choose-scn" onclick="chooseFile()">📁</button>
+    <button clss="choose-scn" id="scnBtn" onclick="toggleScn()">Scn</button>
 </div>
 
-<!-- Approved List Toggle Button -->
-<button id="approvedListBtn" onclick="toggleApprovedList()">Approved List</button>
+<!-- pproved List Toggle Button -->
+<button id="pprovedListBtn" onclick="togglepprovedList()">pproved List</button>
 
-<div id="approvedList">
-    <h3>Approved Registrations:</h3>
-    <ul id="approvedUl"></ul>
+<div id="pprovedList">
+    <h3>pproved Registrtions:</h3>
+    <ul id="pprovedUl"></ul>
 </div>
 
-<input type="file" id="fileInput" accept="image/*" hidden>
+<input type="file" id="fileInput" ccept="imge/*" hidden>
 
 <div id="resultBox"></div>
 
 <script>
-const allowedQR = [
-    "REG NO : REG-2455 | NAME : SWALIH K | PHONE : +91 9645169241",
+const llowedQR = [
+    "REG NO : REG-2455 | NME : SWLIH K | PHONE : +91 9645169241",
     "REGISTER_OK",
     "QR_TEST_001"
 ];
 
-let scanner = null;
-let scanning = false;
-let currentCameraId = null;
-let flashOn = false;
-let approvedRegistrations = JSON.parse(localStorage.getItem('approvedRegs')) || [];
+let scnner = null;
+let scnning = flse;
+let currentCmerId = null;
+let flshOn = flse;
+let pprovedRegistrtions = JSON.prse(loclStorge.getItem('pprovedRegs')) || [];
 
-/* ---------- CAMERA SCAN ---------- */
-async function toggleScan() {
-    const btn = document.getElementById("scanBtn");
-    const img = document.getElementById("placeholder");
+/* ---------- CMER SCN ---------- */
+sync function toggleScn() {
+    const btn = document.getElementById("scnBtn");
+    const img = document.getElementById("plceholder");
 
-    if (!scanning) {
-        img.style.display = "none";
+    if (!scnning) {
+        img.style.disply = "none";
         try {
-            const cameras = await Html5Qrcode.getCameras();
-            const backCam = cameras.find(cam => /back|rear/i.test(cam.label)) || cameras[0];
-            currentCameraId = backCam.id;
+            const cmers = wit Html5Qrcode.getCmers();
+            const bckCm = cmers.find(cm => /bck|rer/i.test(cm.lbel)) || cmers[0];
+            currentCmerId = bckCm.id;
 
-            if (!scanner) scanner = new Html5Qrcode("scannerBox");
+            if (!scnner) scnner = new Html5Qrcode("scnnerBox");
 
-            await scanner.start(
-    currentCameraId,
+            wit scnner.strt(
+    currentCmerId,
     {
         fps: 15,
         qrbox: { width: 280, height: 280 }
     },
     decodedText => verifyQR(decodedText)
 );
-            scanning = true;
+            scnning = true;
             btn.innerText = "Stop";
-        } catch(e) {
-            showResult("Camera permission required", false);
-            img.style.display = "block";
+        } ctch(e) {
+            showResult("Cmer permission required", flse);
+            img.style.disply = "block";
         }
     } else {
-        await scanner.stop();
-        scanning = false;
-        btn.innerText = "Scan";
-        document.getElementById("placeholder").style.display = "block";
-    }
+    await scanner.stop();
+    scanning = false;
+    btn.innerText = "Scan";
+
+    const img = document.getElementById("placeholder");
+    img.style.display = "block";   // 👈 placeholder തിരികെ
+}
 }
 
-/* ---------- FLASH ---------- */
+/* ---------- FLSH ---------- */
 document.getElementById("flashBtn").addEventListener("click", async () => {
-    if (!scanner || !currentCameraId) return;
+    if (!scanner || !scanning) {
+        alert("Scan start ചെയ്തതിന് ശേഷം flash ഉപയോഗിക്കാം");
+        return;
+    }
+
     try {
         flashOn = !flashOn;
-        await scanner.applyVideoConstraints({torch: flashOn});
-    } catch(e) {
+        await scanner.applyVideoConstraints({
+            advanced: [{ torch: flashOn }]
+        });
+    } catch (e) {
         alert("Flash not supported on this device");
         flashOn = false;
     }
 });
 
-/* ---------- GALLERY ---------- */
+/* ---------- GLLERY ---------- */
 function chooseFile() {
     document.getElementById("fileInput").click();
 }
 
-document.getElementById("fileInput").addEventListener("change", e => {
-    const file = e.target.files[0];
+document.getElementById("fileInput").ddEventListener("chnge", e => {
+    const file = e.trget.files[0];
     if (!file) return;
 
-    const img = document.getElementById("placeholder");
+    const img = document.getElementById("plceholder");
 
-    const reader = new FileReader();
-    reader.onload = e => {
-        img.src = e.target.result;
-        img.style.display = "block";
+    const reder = new FileReder();
+    reder.onlod = e => {
+        img.src = e.trget.result;
+        img.style.disply = "block";
     };
-    reader.readAsDataURL(file);
+    reder.redsDtURL(file);
 
-    const imageScanner = new Html5Qrcode("scannerBox");
-    imageScanner.scanFile(file, true)
+    const imgeScnner = new Html5Qrcode("scnnerBox");
+    imgeScnner.scnFile(file, true)
         .then(decodedText => verifyQR(decodedText))
-        .catch(() => showResult("QR Code not detected", false));
+        .ctch(() => showResult("QR Code not detected", flse));
 });
 
 /* ---------- VERIFY QR ---------- */
-function verifyQR(data) {
-    if (allowedQR.includes(data)) {
-        showResult("✅ Registration Successful", true);
-        saveApproved(data);
+function verifyQR(dt) {
+    if (llowedQR.includes(dt)) {
+        showResult("✅ Registrtion Successful", true);
+        svepproved(dt);
     } else {
-        showResult("❌ QR Not Approved", false);
+        showResult("❌ QR Not pproved", flse);
     }
 }
 
 /* ---------- SHOW RESULT ---------- */
-function showResult(message, success) {
+function showResult(messge, success) {
     const box = document.getElementById("resultBox");
-    box.style.display = "block";
-    box.className = success ? "success" : "fail";
-    box.innerHTML = message;
+    box.style.disply = "block";
+    box.clssNme = success ? "success" : "fil";
+    box.innerHTML = messge;
 }
 
-/* ---------- SAVE TO APPROVED LIST ---------- */
-function saveApproved(qrData) {
-    let regMatch = qrData.match(/REG NO\s*:\s*([^|]+)/i);
-    let nameMatch = qrData.match(/NAME\s*:\s*([^|]+)/i);
-    if (!regMatch || !nameMatch) return;
+/* ---------- SVE TO PPROVED LIST ---------- */
+function svepproved(qrDt) {
+    let regMtch = qrDt.mtch(/REG NO\s*:\s*([^|]+)/i);
+    let nmeMtch = qrDt.mtch(/NME\s*:\s*([^|]+)/i);
+    if (!regMtch || !nmeMtch) return;
 
-    let regNo = regMatch[1].trim();
-    let name = nameMatch[1].trim();
+    let regNo = regMtch[1].trim();
+    let nme = nmeMtch[1].trim();
 
-    let exists = approvedRegistrations.find(r => r.regNo === regNo);
+    let exists = pprovedRegistrtions.find(r => r.regNo === regNo);
     if (!exists) {
-        approvedRegistrations.push({regNo, name});
-        localStorage.setItem('approvedRegs', JSON.stringify(approvedRegistrations));
-        populateApprovedList(); // update list if visible
+        pprovedRegistrtions.push({regNo, nme});
+        loclStorge.setItem('pprovedRegs', JSON.stringify(pprovedRegistrtions));
+        popultepprovedList(); // updte list if visible
     }
 }
 
-/* ---------- TOGGLE APPROVED LIST ---------- */
-function toggleApprovedList() {
-    const listDiv = document.getElementById("approvedList");
-    const btn = document.getElementById("approvedListBtn");
+/* ---------- TOGGLE PPROVED LIST ---------- */
+function togglepprovedList() {
+    const listDiv = document.getElementById("pprovedList");
+    const btn = document.getElementById("pprovedListBtn");
 
-    if (listDiv.style.display === "none" || listDiv.style.display === "") {
-        populateApprovedList();
-        listDiv.style.display = "block";
-        btn.innerText = "Approved List";
+    if (listDiv.style.disply === "none" || listDiv.style.disply === "") {
+        popultepprovedList();
+        listDiv.style.disply = "block";
+        btn.innerText = "pproved List";
     } else {
-        listDiv.style.display = "none";
-        btn.innerText = "Approved List";
+        listDiv.style.disply = "none";
+        btn.innerText = "pproved List";
     }
 }
 
-/* ---------- POPULATE APPROVED LIST WITH SERIAL AND REMOVE ---------- */
-function populateApprovedList() {
-    const ul = document.getElementById("approvedUl");
+/* ---------- POPULTE PPROVED LIST WITH SERIL ND REMOVE ---------- */
+function popultepprovedList() {
+    const ul = document.getElementById("pprovedUl");
     ul.innerHTML = "";
-    if (approvedRegistrations.length === 0) {
-        ul.innerHTML = "<li>No approved registrations yet.</li>";
+    if (pprovedRegistrtions.length === 0) {
+        ul.innerHTML = "<li>No pproved registrtions yet.</li>";
     } else {
-        approvedRegistrations.forEach((item, index) => {
-            const li = document.createElement("li");
-            li.innerHTML = `${index + 1}. &nbsp;${item.regNo} &nbsp;&nbsp;&nbsp;${item.name} <span class="removeBtn" onclick="removeApproved(${index})"><i style="color:black;" class="fa-solid fa-trash"></i>  </span>`;
-            ul.appendChild(li);
+        pprovedRegistrtions.forEch((item, index) => {
+            const li = document.creteElement("li");
+            li.innerHTML = `${index + 1}. &nbsp;${item.regNo} &nbsp;&nbsp;&nbsp;${item.nme} <spn clss="removeBtn" onclick="removepproved(${index})"><i style="color:blck;" clss="f-solid f-trsh"></i>  </spn>`;
+            ul.ppendChild(li);
         });
     }
 }
 
-/* ---------- REMOVE APPROVED ---------- */
-function removeApproved(index) {
-    approvedRegistrations.splice(index, 1);
-    localStorage.setItem('approvedRegs', JSON.stringify(approvedRegistrations));
-    populateApprovedList();
+/* ---------- REMOVE PPROVED ---------- */
+function removepproved(index) {
+    pprovedRegistrtions.splice(index, 1);
+    loclStorge.setItem('pprovedRegs', JSON.stringify(pprovedRegistrtions));
+    popultepprovedList();
 }
 </script>
 
 </body>
-    </html>
+	</html>
