@@ -1,9 +1,11 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta charset="UTF-8">
-<title>QR Verification</title>
+	<link rel="stylesheet"
+ href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>QR Verification with Approved List</title>
 
 <script src="https://unpkg.com/html5-qrcode"></script>
 
@@ -11,6 +13,7 @@
 body {
     font-family: Arial;
     text-align: center;
+    padding: 10px;
 }
 
 .scanner {
@@ -20,11 +23,14 @@ body {
     border: 2px solid black;
     position: relative;
 }
-
-.scanner img {
-    width: 100%;
-    aspect-ratio: 1/1;
+    .scanner img {
+    max-width: 100%;
+    max-height: 100%;
+    width: auto;
+    height: auto;
     object-fit: contain;
+    image-rendering: auto;
+    image-orientation: from-image;
 }
 
 .buttons {
@@ -36,8 +42,78 @@ body {
 
 .choose-scan {
     width: 49%;
-    height: 1cm;
-    font-size: 0.45cm;
+    height: 1.2cm;
+    font-size: 0.5cm;
+    border: 2px solid black;
+}
+
+#flashBtn {
+    position: absolute;
+    top: 5px;
+    right: 5px;
+    background: rgba(255,255,255,0.8);
+    border: none;
+    font-size: 1.2em;
+    border-radius: 50%;
+    width: 35px;
+    height: 35px;
+}
+
+#resultBox {
+    width: 74%;
+    margin: 0.5cm auto;
+    padding: 12px;
+    border-radius: 8px;
+    display: none;
+    font-size: 18px;
+    font-weight: bold;
+}
+
+.success { color: green; border: 2px solid green; }
+.fail { color: red; border: 2px solid red; }
+
+/* Approved List Styling */
+#approvedListBtn {
+    width: 80%;
+    margin: 0.5cm auto;
+    padding: 12px;
+    font-size: 1em;
+    border-radius: 8px;
+    border: 2px solid #555;
+    cursor: pointer;
+    background: #f0f0f0;
+}
+
+#approvedList {
+    width: 74%;
+    margin: 0.5cm auto;
+    padding: 10px;
+    border: 2px solid #555;
+    border-radius: 8px;
+    display: none;
+    text-align: left;
+    max-height: 300px;
+    overflow-y: auto;
+    background: #f9f9f9;
+}
+
+#approvedList h3 {
+    margin-top: 0;
+}
+
+#approvedUl li {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 4px 0;
+    margin-left: -1.11cm;
+    border-bottom: 1px solid #ddd;
+}
+
+.removeBtn {
+    color: red;
+    cursor: pointer;
+    font-weight: bold;
 }
 </style>
 </head>
@@ -48,18 +124,28 @@ body {
 
 <div class="scanner" id="scannerBox">
     <img id="placeholder"
-     src="https://img.freepik.com/premium-vector/qr-code-scan-badge-icon-technology-instant-payment-tech-pay-method-without-money-vector-eps-10-isolated-white-background_399089-3451.jpg">
+         src="https://img.freepik.com/premium-vector/qr-code-scan-badge-icon-technology-instant-payment-tech-pay-method-without-money-vector-eps-10-isolated-white-background_399089-3451.jpg">
+    <button id="flashBtn">⚡</button>
 </div>
 
 <div class="buttons">
-    <button class="choose-scan" onclick="chooseFile()">Choose File</button>
+    <button class="choose-scan" onclick="chooseFile()">📁</button>
     <button class="choose-scan" id="scanBtn" onclick="toggleScan()">Scan</button>
+</div>
+
+<!-- Approved List Toggle Button -->
+<button id="approvedListBtn" onclick="toggleApprovedList()">Approved List</button>
+
+<div id="approvedList">
+    <h3>Approved Registrations:</h3>
+    <ul id="approvedUl"></ul>
 </div>
 
 <input type="file" id="fileInput" accept="image/*" hidden>
 
+<div id="resultBox"></div>
+
 <script>
-/* ✅ Allowed QR Codes */
 const allowedQR = [
     "REG NO : REG-2455 | NAME : SWALIH K | PHONE : +91 9645169241",
     "REGISTER_OK",
@@ -68,86 +154,154 @@ const allowedQR = [
 
 let scanner = null;
 let scanning = false;
+let currentCameraId = null;
+let flashOn = false;
+let approvedRegistrations = JSON.parse(localStorage.getItem('approvedRegs')) || [];
 
-/* ---------- TOGGLE CAMERA SCAN ---------- */
-function toggleScan() {
-
+/* ---------- CAMERA SCAN ---------- */
+async function toggleScan() {
     const btn = document.getElementById("scanBtn");
     const img = document.getElementById("placeholder");
 
     if (!scanning) {
+        img.style.display = "none";
+        try {
+            const cameras = await Html5Qrcode.getCameras();
+            const backCam = cameras.find(cam => /back|rear/i.test(cam.label)) || cameras[0];
+            currentCameraId = backCam.id;
 
-        Html5Qrcode.getCameras().then(cameras => {
+            if (!scanner) scanner = new Html5Qrcode("scannerBox");
 
-            if (!scanner) {
-                scanner = new Html5Qrcode("scannerBox");
-            }
-
-            img.style.display = "none";
-
-            scanner.start(
-                cameras[0].id,
-                { fps: 10, qrbox: 250 },
-                onScanSuccess
-            );
-
+            await scanner.start(
+    currentCameraId,
+    {
+        fps: 15,
+        qrbox: { width: 280, height: 280 }
+    },
+    decodedText => verifyQR(decodedText)
+);
             scanning = true;
             btn.innerText = "Stop";
-
-        }).catch(() => {
-            alert("Camera permission required");
-        });
-
-    } else {
-
-        scanner.stop().then(() => {
-            scanning = false;
-            btn.innerText = "Scan";
+        } catch(e) {
+            showResult("Camera permission required", false);
             img.style.display = "block";
-        });
+        }
+    } else {
+        await scanner.stop();
+        scanning = false;
+        btn.innerText = "Scan";
+        document.getElementById("placeholder").style.display = "block";
     }
 }
 
-/* ---------- CAMERA SCAN SUCCESS ---------- */
-function onScanSuccess(decodedText) {
-    scanner.stop().then(() => {
-        scanning = false;
-        document.getElementById("scanBtn").innerText = "Scan";
-        document.getElementById("placeholder").style.display = "block";
-        verifyQR(decodedText);
-    });
-}
+/* ---------- FLASH ---------- */
+document.getElementById("flashBtn").addEventListener("click", async () => {
+    if (!scanner || !currentCameraId) return;
+    try {
+        flashOn = !flashOn;
+        await scanner.applyVideoConstraints({torch: flashOn});
+    } catch(e) {
+        alert("Flash not supported on this device");
+        flashOn = false;
+    }
+});
 
-/* ---------- OPEN GALLERY ---------- */
+/* ---------- GALLERY ---------- */
 function chooseFile() {
     document.getElementById("fileInput").click();
 }
 
-/* ---------- GALLERY IMAGE SCAN ---------- */
 document.getElementById("fileInput").addEventListener("change", e => {
     const file = e.target.files[0];
     if (!file) return;
 
-    const imageScanner = new Html5Qrcode("scannerBox");
+    const img = document.getElementById("placeholder");
 
+    const reader = new FileReader();
+    reader.onload = e => {
+        img.src = e.target.result;
+        img.style.display = "block";
+    };
+    reader.readAsDataURL(file);
+
+    const imageScanner = new Html5Qrcode("scannerBox");
     imageScanner.scanFile(file, true)
-        .then(decodedText => {
-            verifyQR(decodedText);
-        })
-        .catch(() => {
-            alert("Invalid QR Code");
-        });
+        .then(decodedText => verifyQR(decodedText))
+        .catch(() => showResult("QR Code not detected", false));
 });
 
 /* ---------- VERIFY QR ---------- */
 function verifyQR(data) {
     if (allowedQR.includes(data)) {
-        alert("✅ Registration Successful");
+        showResult("✅ Registration Successful", true);
+        saveApproved(data);
     } else {
-        alert("❌ QR Not Approved");
+        showResult("❌ QR Not Approved", false);
     }
+}
+
+/* ---------- SHOW RESULT ---------- */
+function showResult(message, success) {
+    const box = document.getElementById("resultBox");
+    box.style.display = "block";
+    box.className = success ? "success" : "fail";
+    box.innerHTML = message;
+}
+
+/* ---------- SAVE TO APPROVED LIST ---------- */
+function saveApproved(qrData) {
+    let regMatch = qrData.match(/REG NO\s*:\s*([^|]+)/i);
+    let nameMatch = qrData.match(/NAME\s*:\s*([^|]+)/i);
+    if (!regMatch || !nameMatch) return;
+
+    let regNo = regMatch[1].trim();
+    let name = nameMatch[1].trim();
+
+    let exists = approvedRegistrations.find(r => r.regNo === regNo);
+    if (!exists) {
+        approvedRegistrations.push({regNo, name});
+        localStorage.setItem('approvedRegs', JSON.stringify(approvedRegistrations));
+        populateApprovedList(); // update list if visible
+    }
+}
+
+/* ---------- TOGGLE APPROVED LIST ---------- */
+function toggleApprovedList() {
+    const listDiv = document.getElementById("approvedList");
+    const btn = document.getElementById("approvedListBtn");
+
+    if (listDiv.style.display === "none" || listDiv.style.display === "") {
+        populateApprovedList();
+        listDiv.style.display = "block";
+        btn.innerText = "Approved List";
+    } else {
+        listDiv.style.display = "none";
+        btn.innerText = "Approved List";
+    }
+}
+
+/* ---------- POPULATE APPROVED LIST WITH SERIAL AND REMOVE ---------- */
+function populateApprovedList() {
+    const ul = document.getElementById("approvedUl");
+    ul.innerHTML = "";
+    if (approvedRegistrations.length === 0) {
+        ul.innerHTML = "<li>No approved registrations yet.</li>";
+    } else {
+        approvedRegistrations.forEach((item, index) => {
+            const li = document.createElement("li");
+            li.innerHTML = `${index + 1}. &nbsp;${item.regNo} &nbsp;&nbsp;&nbsp;${item.name} <span class="removeBtn" onclick="removeApproved(${index})"><i style="color:black;" class="fa-solid fa-trash"></i>  </span>`;
+            ul.appendChild(li);
+        });
+    }
+}
+
+/* ---------- REMOVE APPROVED ---------- */
+function removeApproved(index) {
+    approvedRegistrations.splice(index, 1);
+    localStorage.setItem('approvedRegs', JSON.stringify(approvedRegistrations));
+    populateApprovedList();
 }
 </script>
 
 </body>
-</html>
+    </html>
