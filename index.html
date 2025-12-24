@@ -35,34 +35,22 @@ body {
     height: 1cm;
     font-size: 0.45cm;
 }
-.approve {
-    font-weight: bold;
-    margin-top: 0.5cm;
-    cursor: pointer;
-}
-#approvedList {
-    display: none;
-    margin-top: 10px;
-}
 </style>
 </head>
 
 <body>
 
 <div class="scanner" id="scannerBox">
-    <!-- Placeholder image -->
-    <img id="placeholder" src="https://img.freepik.com/premium-vector/qr-code-scan-badge-icon-technology-instant-payment-tech-pay-method-without-money-vector-eps-10-isolated-white-background_399089-3451.jpg?semt=ais_hybrid&w=740&q=80"/></div>
+    <img id="placeholder"
+     src="https://img.freepik.com/premium-vector/qr-code-scan-badge-icon-technology-instant-payment-tech-pay-method-without-money-vector-eps-10-isolated-white-background_399089-3451.jpg">
+</div>
 
 <div class="buttons">
     <button class="choose-scan" onclick="chooseFile()">Choose File</button>
-    <button class="choose-scan" onclick="toggleScan()">Scan</button>
+    <button class="choose-scan" id="scanBtn" onclick="toggleScan()">Scan</button>
 </div>
 
 <input type="file" id="fileInput" accept="image/*" hidden>
-
-<h6 class="approve" onclick="showApproved()">A&nbsp;p&nbsp;p&nbsp;r&nbsp;o&nbsp;v&nbsp;e&nbsp;d&nbsp; L&nbsp;i&nbsp;s&nbsp;t</h6>
-
-<div id="approvedList"></div>
 
 <script>
 const allowedQR = [
@@ -71,41 +59,55 @@ const allowedQR = [
     "QR_TEST_001"
 ];
 
-let scanner;
+let scanner = null;
 let scanning = false;
 
-/* ===== Toggle Camera Scan ===== */
+/* ===== Toggle Scan / Stop ===== */
 function toggleScan() {
+
+    const btn = document.getElementById("scanBtn");
+    const img = document.getElementById("placeholder");
+
     if (!scanning) {
+
         Html5Qrcode.getCameras().then(cams => {
-            if (cams.length === 0) {
-                alert("Camera not available");
-                return;
+            if (!scanner) {
+                scanner = new Html5Qrcode("scannerBox");
             }
-            document.getElementById("placeholder").style.display = "none";
-            scanner = new Html5Qrcode("scannerBox");
+
+            img.style.display = "none";
+
             scanner.start(
                 cams[0].id,
-                { fps: 10, qrbox: { width: 250, height: 250 } },
+                { fps: 10, qrbox: 250 },
                 onScanSuccess
             );
+
             scanning = true;
+            btn.innerText = "Stop";
+
         }).catch(() => {
             alert("Camera permission required");
         });
+
     } else {
-        scanner.stop();
-        scanning = false;
-        document.getElementById("placeholder").style.display = "block";
+
+        scanner.stop().then(() => {
+            scanning = false;
+            btn.innerText = "Scan";
+            img.style.display = "block";
+        });
     }
 }
 
 /* ===== Scan Success ===== */
 function onScanSuccess(text) {
-    scanner.stop();
-    scanning = false;
-    document.getElementById("placeholder").style.display = "block";
-    verifyQR(text);
+    scanner.stop().then(() => {
+        scanning = false;
+        document.getElementById("scanBtn").innerText = "Scan";
+        document.getElementById("placeholder").style.display = "block";
+        verifyQR(text);
+    });
 }
 
 /* ===== Choose File ===== */
@@ -126,34 +128,13 @@ document.getElementById("fileInput").addEventListener("change", e => {
     reader.readAsDataURL(file);
 });
 
-/* ===== Verify QR ===== */
+/* ===== Verify ===== */
 function verifyQR(data) {
     if (allowedQR.includes(data)) {
-        saveApproved(data);
         alert("Registration Successful");
     } else {
         alert("QR Not Approved");
     }
-}
-
-/* ===== Storage ===== */
-function saveApproved(value) {
-    let list = JSON.parse(localStorage.getItem("approved")) || [];
-    if (!list.includes(value)) {
-        list.push(value);
-        localStorage.setItem("approved", JSON.stringify(list));
-    }
-}
-
-/* ===== Show Approved ===== */
-function showApproved() {
-    const box = document.getElementById("approvedList");
-    const list = JSON.parse(localStorage.getItem("approved")) || [];
-
-    box.innerHTML = "<b>Approved Entries</b><br>" +
-        list.map(v => "✔ " + v).join("<br>");
-
-    box.style.display = box.style.display === "none" ? "block" : "none";
 }
 </script>
 
