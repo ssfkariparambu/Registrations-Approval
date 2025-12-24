@@ -1,110 +1,160 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0" />
-
 <title>QR Verification</title>
 
 <script src="https://unpkg.com/html5-qrcode"></script>
 
 <style>
-  body {
+body {
     font-family: Arial;
     text-align: center;
-    padding: 10px;
-  }
-
-  #reader {
-    width: 300px;
-    margin: auto;
-  }
-
-  #result {
-    margin-top: 15px;
-    font-size: 22px;
+}
+.scanner {
+    width: 80%;
+    aspect-ratio: 1/1;
+    margin: 1cm auto 0;
+    border: 2px solid black;
+    position: relative;
+}
+.scanner img {
+    width: 100%;
+    aspect-ratio: 1/1;
+    object-fit: contain;
+}
+.buttons {
+    width: 80%;
+    margin: 0.3cm auto;
+    display: flex;
+    gap: 2%;
+}
+.choose-scan {
+    width: 49%;
+    height: 1cm;
+    font-size: 0.45cm;
+}
+.approve {
     font-weight: bold;
-  }
-
-  /* 🔒 hide camera controls */
-  button, select {
-    display: none !important;
-  }
+    margin-top: 0.5cm;
+    cursor: pointer;
+}
+#approvedList {
+    display: none;
+    margin-top: 10px;
+}
 </style>
 </head>
 
 <body>
 
-<h2>Scan QR Code</h2>
+<div class="scanner" id="scannerBox">
+    <!-- Placeholder image -->
+    <img id="placeholder" src="https://img.freepik.com/premium-vector/qr-code-scan-badge-icon-technology-instant-payment-tech-pay-method-without-money-vector-eps-10-isolated-white-background_399089-3451.jpg?semt=ais_hybrid&w=740&q=80"/></div>
 
-<div id="reader"></div>
+<div class="buttons">
+    <button class="choose-scan" onclick="chooseFile()">Choose File</button>
+    <button class="choose-scan" onclick="toggleScan()">Scan</button>
+</div>
 
-<input type="file" id="qr-input" accept="image/*">
+<input type="file" id="fileInput" accept="image/*" hidden>
 
-<div id="result"></div>
+<h6 class="approve" onclick="showApproved()">A&nbsp;p&nbsp;p&nbsp;r&nbsp;o&nbsp;v&nbsp;e&nbsp;d&nbsp; L&nbsp;i&nbsp;s&nbsp;t</h6>
 
-<!-- 🔊 Beep Sound -->
-<audio id="beep">
-  <source src="https://actions.google.com/sounds/v1/cartoon/wood_plank_flicks.ogg">
-</audio>
+<div id="approvedList"></div>
 
 <script>
-  // 🔒 Hidden valid QR values
-  const validCodes = [
+const allowedQR = [
     "REG NO : REG-2455 | NAME : SWALIH K | PHONE : +91 9645169241",
-    "REG2025B",
-    "EVENT123"
-  ];
+    "REGISTER_OK",
+    "QR_TEST_001"
+];
 
-  const resultBox = document.getElementById("result");
-  const beep = document.getElementById("beep");
+let scanner;
+let scanning = false;
 
-  function verifyCode(text) {
-    if (validCodes.includes(text)) {
-      resultBox.innerHTML = "✅ Registration Successful";
-      resultBox.style.color = "green";
-      beep.play(); // 🔊 sound on success
+/* ===== Toggle Camera Scan ===== */
+function toggleScan() {
+    if (!scanning) {
+        Html5Qrcode.getCameras().then(cams => {
+            if (cams.length === 0) {
+                alert("Camera not available");
+                return;
+            }
+            document.getElementById("placeholder").style.display = "none";
+            scanner = new Html5Qrcode("scannerBox");
+            scanner.start(
+                cams[0].id,
+                { fps: 10, qrbox: { width: 250, height: 250 } },
+                onScanSuccess
+            );
+            scanning = true;
+        }).catch(() => {
+            alert("Camera permission required");
+        });
     } else {
-      resultBox.innerHTML = "❌ Invalid Code";
-      resultBox.style.color = "red";
+        scanner.stop();
+        scanning = false;
+        document.getElementById("placeholder").style.display = "block";
     }
-  }
+}
 
-  // ✅ Back camera only
-  const html5QrCode = new Html5Qrcode("reader");
+/* ===== Scan Success ===== */
+function onScanSuccess(text) {
+    scanner.stop();
+    scanning = false;
+    document.getElementById("placeholder").style.display = "block";
+    verifyQR(text);
+}
 
-  Html5Qrcode.getCameras().then(cameras => {
-    const backCamera = cameras.find(cam =>
-      cam.label.toLowerCase().includes("back") ||
-      cam.label.toLowerCase().includes("environment")
-    );
+/* ===== Choose File ===== */
+function chooseFile() {
+    document.getElementById("fileInput").click();
+}
 
-    const cameraId = backCamera ? backCamera.id : cameras[0].id;
-
-    html5QrCode.start(
-      cameraId,
-      {
-        fps: 10,
-        qrbox: 250
-      },
-      decodedText => {
-        verifyCode(decodedText);
-      }
-    );
-  });
-
-  // 📁 Image upload scan
-  document.getElementById("qr-input").addEventListener("change", function(e) {
+document.getElementById("fileInput").addEventListener("change", e => {
     const file = e.target.files[0];
     if (!file) return;
 
-    html5QrCode.scanFile(file, true)
-      .then(decodedText => verifyCode(decodedText))
-      .catch(() => {
-        resultBox.innerHTML = "❌ QR Code not detected";
-        resultBox.style.color = "red";
-      });
-  });
+    const reader = new FileReader();
+    reader.onload = () => {
+        Html5QrcodeScanner.scanImage(reader.result, true)
+            .then(verifyQR)
+            .catch(() => alert("Invalid QR"));
+    };
+    reader.readAsDataURL(file);
+});
+
+/* ===== Verify QR ===== */
+function verifyQR(data) {
+    if (allowedQR.includes(data)) {
+        saveApproved(data);
+        alert("Registration Successful");
+    } else {
+        alert("QR Not Approved");
+    }
+}
+
+/* ===== Storage ===== */
+function saveApproved(value) {
+    let list = JSON.parse(localStorage.getItem("approved")) || [];
+    if (!list.includes(value)) {
+        list.push(value);
+        localStorage.setItem("approved", JSON.stringify(list));
+    }
+}
+
+/* ===== Show Approved ===== */
+function showApproved() {
+    const box = document.getElementById("approvedList");
+    const list = JSON.parse(localStorage.getItem("approved")) || [];
+
+    box.innerHTML = "<b>Approved Entries</b><br>" +
+        list.map(v => "✔ " + v).join("<br>");
+
+    box.style.display = box.style.display === "none" ? "block" : "none";
+}
 </script>
 
 </body>
