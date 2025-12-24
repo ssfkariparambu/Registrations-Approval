@@ -22,6 +22,7 @@ body {
     margin: 1cm auto 0;
     border: 2px solid black;
     position: relative;
+    overflow: hidden;
 }
     .scanner img {
     max-width: 100%;
@@ -49,14 +50,15 @@ body {
 
 #flashBtn {
     position: absolute;
-    top: 5px;
-    right: 5px;
-    background: rgba(255,255,255,0.8);
+    top: 8px;
+    right: 8px;
+    z-index: 9999;   /* 👈 ഏറ്റവും പ്രധാനപ്പെട്ടത് */
+    background: rgba(255,255,255,0.85);
     border: none;
-    font-size: 1.2em;
     border-radius: 50%;
-    width: 35px;
-    height: 35px;
+    width: 36px;
+    height: 36px;
+    display: none;
 }
 
 #resultBox {
@@ -120,11 +122,6 @@ body {
     cursor: pointer;
     font-weight: bold;
 }
-#scannerBox video {
-    width: 100% !important;
-    height: 100% !important;
-    object-fit: cover; /* contain വേണ്ട, cover ആണ് നല്ലത് scan ന് */
-}
 </style>
 </head>
 
@@ -154,7 +151,9 @@ body {
 <input type="file" id="fileInput" accept="image/*" hidden>
 
 <div id="resultBox"></div>
-
+<audio id="successBeep">
+    <source src="https://actions.google.com/sounds/v1/cartoon/clang_and_wobble.ogg" type="audio/ogg">
+</audio>
 <script>
 const allowedQR = [
     "REG NO : REG-2455 | NAME : SWALIH K | PHONE : +91 9645169241",
@@ -234,18 +233,20 @@ document.getElementById("fileInput").addEventListener("change", e => {
     if (!file) return;
 
     const img = document.getElementById("placeholder");
+    img.style.display = "block";
 
     const reader = new FileReader();
-    reader.onload = e => {
-        img.src = e.target.result;
-        img.style.display = "block";
-    };
+    reader.onload = e => img.src = e.target.result;
     reader.readAsDataURL(file);
 
     const imageScanner = new Html5Qrcode("scannerBox");
+
     imageScanner.scanFile(file, true)
         .then(decodedText => verifyQR(decodedText))
-        .catch(() => showResult("QR Code not detected", false));
+        .catch(() => showResult("QR Code not detected", false))
+        .finally(() => {
+            img.style.display = "block";   // ✅ placeholder always visible
+        });
 });
 
 /* ---------- VERIFY QR ---------- */
@@ -319,7 +320,19 @@ function removeApproved(index) {
     localStorage.setItem('approvedRegs', JSON.stringify(approvedRegistrations));
     populateApprovedList();
 }
+
+function verifyQR(data) {
+    if (allowedQR.includes(data)) {
+        showResult("✅ Registration Successful", true);
+
+        document.getElementById("successBeep").play(); // 🔊 beep
+        saveApproved(data);
+
+    } else {
+        showResult("❌ QR Not Approved", false);
+    }
+}
 </script>
 
 </body>
-</html>
+	</html>
