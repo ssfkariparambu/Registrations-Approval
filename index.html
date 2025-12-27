@@ -52,13 +52,13 @@ body {
     position: absolute;
     top: 8px;
     right: 8px;
-    z-index: 9999;   /* 👈 ഏറ്റവും പ്രധാനപ്പെട്ടത് */
+    z-index: 9999;
     background: rgba(255,255,255,0.85);
     border: none;
     border-radius: 50%;
     width: 36px;
     height: 36px;
-    display: none;
+    display: none;   /* start സമയത്ത് JS വഴി show ചെയ്യും */
 }
 
 #resultBox {
@@ -114,7 +114,7 @@ body {
 #scannerBox video {
     width: 100% !important;
     height: 100% !important;
-    object-fit: cover; /* contain വേണ്ട, cover ആണ് നല്ലത് scan ന് */
+    object-fit: cover; /* contain р┤╡р╡Зр┤гр╡Нр┤Я, cover р┤Жр┤гр╡Н р┤ир┤▓р╡Нр┤▓р┤др╡Н scan р┤ир╡Н */
 } 
 
 .removeBtn {
@@ -132,11 +132,11 @@ body {
 <div class="scanner" id="scannerBox">
     <img id="placeholder"
          src="https://img.freepik.com/premium-vector/qr-code-scan-badge-icon-technology-instant-payment-tech-pay-method-without-money-vector-eps-10-isolated-white-background_399089-3451.jpg">
-    <button id="flashBtn">⚡</button>
+    <button id="flashBtn">💡</button>
 </div>
 
 <div class="buttons">
-    <button class="choose-scan" onclick="chooseFile()">📁</button>
+    <button class="choose-scan" onclick="chooseFile()">ЁЯУБ</button>
     <button class="choose-scan" id="scanBtn" onclick="toggleScan()">Scan</button>
 </div>
 
@@ -211,58 +211,66 @@ let approvedRegistrations = JSON.parse(localStorage.getItem('approvedRegs')) || 
 
 /* ---------- CAMERA SCAN ---------- */
 async function toggleScan() {
-    const btn = document.getElementById("scanBtn");
-    const img = document.getElementById("placeholder");
-
-    if (!scanning) {
-        img.style.display = "none";
-        try {
-            const cameras = await Html5Qrcode.getCameras();
-            const backCam = cameras.find(cam => /back|rear/i.test(cam.label)) || cameras[0];
-            currentCameraId = backCam.id;
-
-            if (!scanner) scanner = new Html5Qrcode("scannerBox");
-
-            await scanner.start(
-    currentCameraId,
-    {
-        fps: 15,
-        qrbox: { width: 280, height: 280 }
-    },
-    decodedText => verifyQR(decodedText)
-);
-            scanning = true;
-            btn.innerText = "Stop";
-        } catch(e) {
-            showResult("Camera permission required", false);
-            img.style.display = "block";
-        }
-    } else {
-    await scanner.stop();
-    scanning = false;
-    btn.innerText = "Scan";
+    if (scanning) return; // വീണ്ടും Scan അമർത്തിയാൽ ഒന്നും ചെയ്യരുത്
 
     const img = document.getElementById("placeholder");
-    img.style.display = "block";   // 👈 placeholder തിരികെ
-}
+    const flashBtn = document.getElementById("flashBtn");
+
+    img.style.display = "none";
+
+    try {
+        const cameras = await Html5Qrcode.getCameras();
+        const backCam = cameras.find(cam => /back|rear/i.test(cam.label)) || cameras[0];
+        currentCameraId = backCam.id;
+
+        if (!scanner) scanner = new Html5Qrcode("scannerBox");
+
+        await scanner.start(
+            currentCameraId,
+            {
+                fps: 15,
+                qrbox: { width: 280, height: 280 }
+            },
+            decodedText => verifyQR(decodedText)
+        );
+
+        scanning = true;
+
+        // ✅ Flash button show
+        flashBtn.style.display = "block";
+
+    } catch (e) {
+        showResult("Camera permission required", false);
+        img.style.display = "block";
+    }
 }
 
 /* ---------- FLASH ---------- */
 document.getElementById("flashBtn").addEventListener("click", async () => {
     if (!scanner || !scanning) {
-        alert("Scan start ചെയ്തതിന് ശേഷം flash ഉപയോഗിക്കാം");
+        alert("Scan ആദ്യം start ചെയ്യണം");
         return;
     }
 
     try {
         flashOn = !flashOn;
+
         await scanner.applyVideoConstraints({
             advanced: [{ torch: flashOn }]
         });
+
+        document.getElementById("flashBtn").innerHTML =
+            flashOn ? "🔦" : "💡";
+
     } catch (e) {
         alert("Flash not supported on this device");
         flashOn = false;
     }
+});
+
+/* page refresh ആകുമ്പോൾ flash off */
+window.addEventListener("beforeunload", () => {
+    flashOn = false;
 });
 
 /* ---------- GALLERY ---------- */
@@ -287,17 +295,18 @@ document.getElementById("fileInput").addEventListener("change", e => {
         .then(decodedText => verifyQR(decodedText))
         .catch(() => showResult("QR Code not detected", false))
         .finally(() => {
-            img.style.display = "block";   // ✅ placeholder always visible
+            img.style.display = "block";   // тЬЕ placeholder always visible
         });
 });
 
 /* ---------- VERIFY QR ---------- */
 function verifyQR(data) {
     if (allowedQR.includes(data)) {
-        showResult("✅ Registration Successful", true);
+        showResult("✔ Registration Successful", true);
+        document.getElementById("successBeep").play();
         saveApproved(data);
     } else {
-        showResult("❌ QR Not Approved", false);
+        showResult("✖ QR Not Approved", false);
     }
 }
 
@@ -318,11 +327,19 @@ function saveApproved(qrData) {
     let regNo = regMatch[1].trim();
     let name = nameMatch[1].trim();
 
-    let exists = approvedRegistrations.find(r => r.regNo === regNo);
-    if (!exists) {
-        approvedRegistrations.push({regNo, name});
-        localStorage.setItem('approvedRegs', JSON.stringify(approvedRegistrations));
-        populateApprovedList(); // update list if visible
+let exists = approvedRegistrations.some(r => r.regNo === regNo);
+if (exists) return;
+
+approvedRegistrations.push({ regNo, name });
+
+approvedRegistrations.sort((a, b) => {
+    const numA = parseInt(a.regNo.replace(/\D/g, ""));
+    const numB = parseInt(b.regNo.replace(/\D/g, ""));
+    return numA - numB;
+});
+
+localStorage.setItem('approvedRegs', JSON.stringify(approvedRegistrations));
+populateApprovedList();
     }
 }
 
@@ -365,13 +382,11 @@ function removeApproved(index) {
 
 function verifyQR(data) {
     if (allowedQR.includes(data)) {
-        showResult("✅ Registration Successful", true);
-
-        document.getElementById("successBeep").play(); // 🔊 beep
+        showResult("✔ Registration Successful", true);
+        document.getElementById("successBeep").play();
         saveApproved(data);
-
     } else {
-        showResult("❌ QR Not Approved", false);
+        showResult("✖ QR Not Approved", false);
     }
 }
 </script>
